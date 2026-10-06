@@ -7,6 +7,8 @@ import os
 from dotenv import load_dotenv
 from groq import Groq
 
+from prompts import build_prompt
+
 load_dotenv()
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 nlp = spacy.load("en_core_web_sm")
@@ -38,14 +40,12 @@ def classify_article(text, threshold=0.4):
         return "Uncertain / Out-of-domain"
     return predicted_label
 
-def summarize_article(text):
+def summarize_article(text, category):
+    prompt = build_prompt(category, text)
     response = client.chat.completions.create(
         model="openai/gpt-oss-20b",
         messages=[
-            {
-                "role": "user",
-                "content": f"Summarize this article in 2 sentences for a business consultant who needs to quickly assess financial risk implications:\n\n{text}"
-            }
+            {"role": "user", "content": prompt}
         ]
     )
     return response.choices[0].message.content
@@ -63,8 +63,9 @@ def extract_entities(text):
 @app.post("/analyze")
 def analyze(request: ArticleRequest):
     text = request.text
+    category = classify_article(text)
     return {
-        "category": classify_article(text),
-        "summary": summarize_article(text),
+        "category": category,
+        "summary": summarize_article(text, category),
         "entities": extract_entities(text)
     }
