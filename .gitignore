@@ -1,0 +1,6 @@
+.env
+venv/
+__pycache__/
+*.pkl
+News_Category_Dataset_v3.json
+combined_news_data.csv
